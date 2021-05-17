@@ -1,0 +1,33 @@
+{
+  "formFields":
+  [
+    {
+      "layout": "row",
+      "field-boxes": [
+        {
+          "layout": "column" / "row",
+          "amount": number,
+          "gap": number,
+          "fields": [
+          {
+            "type": checkbox / text / radio / email / number / password / select,
+            "title": string,
+            "label": string,
+            "name": string,
+            "placeholder": string,
+            "validations": {
+              "required": true,
+              "range": {
+                "min": number,
+                "max": number
+              }
+            }
+          }
+        ]
+        }
+      ]
+    }
+  ],
+  "submitButtonText": string,
+}
+
