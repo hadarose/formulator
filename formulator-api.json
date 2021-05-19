@@ -31,3 +31,9 @@
   "submitButtonText": string,
 }
 
+names,
+2 forms,
+flexibility,
+colSpan
+isInline boolean
+remove inline

@@ -1,0 +1,9 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 10px;
+    font-family: Arial, sans-serif;
+}

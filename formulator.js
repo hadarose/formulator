@@ -1,146 +1,186 @@
-function formulator({ formTitle, formFields, submitButtonText }) {
-  createMainTitle(formTitle);
-  let form = createForm();
+function formulator({ formTitle, formSections, submitButton }) {
+  createAndAppendTitle(document.body, formTitle);
 
-  formFields.forEach((formField) => {
-    createFieldTitle(form, formField.title);
+  const formElement = createForm();
 
-    let fieldContainer = document.createElement("div");
-    fieldContainer.className = "form-group container row"; //TODO row
+  formSections.forEach(({ sectionTitle, isVerticalLayout, fields }) => {
+    const formSection = document.createElement("fieldset");
+    formSection.setAttribute("class", "form-group container row");
 
-    formField.boxes.forEach((box) => {
-      let boxContainer = document.createElement("div");
-      boxContainer.className = "col-" + box.area; //TODO col
-      fieldContainer.appendChild(boxContainer);
+    createAndAppendTitle(formSection, sectionTitle);
 
-      let label = document.createElement("label");
-      label.setAttribute("for", box.label);
-
-      let input =
-        box.type === "select"
-          ? document.createElement("select")
-          : document.createElement("input");
-
-      addInputAttributes(input, box);
-      input.className = "form-control";
-
-      if (box.type === "checkbox" || box.type === "radio") {
-        if (formField.layout === "inline") {
-          boxContainer.className = "form-check form-check-inline";
-          fieldContainer.style.paddingLeft = "30px";
-        } else {
-          boxContainer.className += " form-check";
-          fieldContainer.className = fieldContainer.className.replace(
-            " row",
-            ""
-          );
-
-          fieldContainer.style.marginLeft = "0px";
-        }
-
-        input.className = "form-check-input";
-        label.className = "form-check-label";
-        label.textContent = box.label;
-      }
-
-      if (box.type === "select") {
-        box.options.forEach((boxOption) => {
-          let option = document.createElement("option");
-          option.setAttribute("value", boxOption);
-          option.textContent = boxOption;
-          input.appendChild(option);
-        });
-
-        boxContainer.className += " form-select";
-        label.textContent = box.type === "select" ? "" : box.label;
-      }
-
-      boxContainer.appendChild(input);
-      boxContainer.appendChild(label);
-      fieldContainer.appendChild(boxContainer);
+    fields.forEach((field) => {
+      createField(formSection, isVerticalLayout, field);
     });
 
-    form.appendChild(fieldContainer);
+    formElement.appendChild(formSection);
   });
 
-  form.appendChild(createSubmitButton(submitButtonText));
-  form.addEventListener("submit", (event) => {
-    if (form.checkValidity() === false) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    form.classList.add("was-validated");
-  });
+  createSubmitButton(formElement, submitButton);
 }
 
 // Assist Functions
-function createMainTitle(formTitle) {
-  if (formTitle) {
-    let mainTitle = document.createElement("h1");
-    mainTitle.textContent = formTitle;
-    document.body.appendChild(mainTitle);
-  }
-}
-
 function createForm() {
-  let form = document.createElement("form");
-  form.className = "needs-validation";
-  form.setAttribute("novalidate", "true");
-  document.body.appendChild(form);
-  return form;
+  let formElement = document.createElement("form");
+  formElement.className = "needs-validation";
+  formElement.setAttribute("novalidate", "true");
+
+  document.body.appendChild(formElement);
+
+  return formElement;
 }
 
-function createFieldTitle(form, title) {
-  if (title) {
-    let fieldTitle = document.createElement("h4");
-    fieldTitle.style.padding = "15px";
-    fieldTitle.textContent = title;
-    form.appendChild(fieldTitle);
+function createAndAppendTitle(element, title) {
+  if (!title) {
+    return;
+  }
+
+  const newTag = element === document.body ? "h1" : "legend";
+  const newTitle = document.createElement(newTag);
+  newTitle.textContent = title;
+  element.appendChild(newTitle);
+}
+
+function createField(formSection, isVerticalLayout, field) {
+  const fieldContainer = document.createElement("div");
+  fieldContainer.setAttribute("class", "col-" + field.colSpan);
+
+  const label = document.createElement("label");
+  label.setAttribute("for", field.label);
+
+  const input = createInput(
+    formSection,
+    isVerticalLayout,
+    fieldContainer,
+    label,
+    field
+  );
+
+  fieldContainer.appendChild(input);
+  fieldContainer.appendChild(label);
+  formSection.appendChild(fieldContainer);
+}
+
+function createInput(
+  formSection,
+  isVerticalLayout,
+  fieldContainer,
+  label,
+  field
+) {
+  const input =
+    field.type === "select"
+      ? document.createElement("select")
+      : document.createElement("input");
+
+  addInputAttributes(input, field);
+
+  if (field.type === "checkbox" || field.type === "radio") {
+    setCheckboxAndRadioAttributes(label, field, input);
+  } else if (field.type === "select") {
+    setSelectAttributes(fieldContainer, label, field, input);
+  }
+
+  setSectionLayout(formSection, isVerticalLayout, fieldContainer, field.type);
+
+  return input;
+}
+
+function addInputAttributes(input, field) {
+  input.setAttribute("type", field.type);
+  input.setAttribute("id", field.label);
+  input.setAttribute("name", field.name);
+  input.setAttribute("class", "form-control");
+
+  if (field.required) {
+    input.setAttribute("required", true);
+  }
+
+  switch (field.type) {
+    case "text":
+    case "email":
+    case "password":
+      input.setAttribute("placeholder", field.placeholder);
+      break;
+    default:
+      break;
   }
 }
 
-function addInputAttributes(input, box) {
-  input.setAttribute("type", box.type);
-  input.setAttribute("id", box.label);
-  input.setAttribute("name", box.name);
+function setCheckboxAndRadioAttributes(label, field, input) {
+  input.setAttribute("class", "form-check-input");
+  label.setAttribute("class", "form-check-label");
+  label.textContent = field.label;
+}
 
-  if (box.required) {
-    input.setAttribute("required", "true");
-  }
+function setSelectAttributes(fieldContainer, label, { options }, input) {
+  options.forEach((option) => {
+    let optionElement = document.createElement("option");
+    optionElement.setAttribute("value", option);
+    optionElement.textContent = option;
+    input.appendChild(optionElement);
+  });
 
-  if (box.type === "text" || box.type === "email" || box.type === "password") {
-    input.setAttribute("placeholder", box.placeholder);
+  fieldContainer.setAttribute(
+    "class",
+    (fieldContainer.className += " form-select")
+  );
+  label.textContent = "";
+}
+
+function setSectionLayout(formSection, isVerticalLayout, fieldContainer, type) {
+  if (isVerticalLayout) {
+    if (type === "radio" || type === "checkbox") {
+      formSection.classList.remove("container", "row");
+    } else {
+      formSection.classList.remove("container", "row");
+    }
+  } else {
+    if (type === "radio" || type === "checkbox") {
+      fieldContainer.className += " form-check";
+      fieldContainer.className = "form-check form-check-inline";
+    }
   }
 }
 
-function createSubmitButton(text) {
+function createSubmitButton(formElement, { text, onSubmit }) {
   let button = document.createElement("input");
   button.setAttribute("type", "submit");
   button.setAttribute("value", text);
   button.className = "btn btn-info";
-  button.style.marginLeft = "15px";
 
-  return button;
+  formElement.appendChild(button);
+
+  formElement.addEventListener("submit", onSubmit);
+  // // Todo onSubmit
+  // formElement.addEventListener("submit", (event) => {
+  //   if (formElement.checkValidity() === false) {
+  //     event.preventDefault();
+  //     event.stopPropagation();
+  //   }
+  //
+  //   formElement.classList.add("was-validated");
+  // });
 }
+
 // Calling the form builder
 
-let box1 = {
+let field1 = {
   type: "text",
   label: "firstName",
   name: "firstName",
   placeholder: "First Name",
-  layout: "",
-  area: 4,
+  colSpan: 4,
+  required: true,
 };
 
-let box2 = {
+let field2 = {
   type: "text",
   label: "lastName",
   name: "lastName",
   placeholder: "Last Name",
-  layout: "",
-  area: 8,
+  colSpan: 8,
+  required: true,
 };
 
 let emailBox = {
@@ -148,8 +188,7 @@ let emailBox = {
   label: "email",
   name: "email",
   placeholder: "xxxx@xxxx.com",
-  layout: "",
-  area: 12,
+  colSpan: 8,
   required: true,
 };
 
@@ -165,78 +204,82 @@ let cityBox = {
   label: "city",
   name: "city",
   placeholder: "",
-  layout: "",
-  area: 12,
-  options: ["Choose An Option", "TLV", "Rishon", "Jerusalem"],
+  colSpan: 12,
+  options: ["Choose An Option", "TLV", "Rishon", "Jerusalem", "Ramat Gan"],
+  required: false,
 };
 
-let box3 = {
+let field3 = {
   type: "radio",
   label: "Beginner",
   name: "programming-level",
   placeholder: "",
-  layout: "",
-  area: 6,
+  colSpan: 6,
+  required: false,
 };
 
-let box4 = {
+let field4 = {
   type: "radio",
   label: "Advanced",
   name: "programming-level",
   placeholder: "",
-  layout: "",
-  area: 6,
+  colSpan: 6,
+  required: false,
 };
 
-let box5 = {
+let field5 = {
   type: "checkbox",
   label: "Under 21",
   name: "age",
   placeholder: "",
-  layout: "block",
-  area: 4,
+  colSpan: 4,
+  required: false,
 };
 
-let box6 = {
+let field6 = {
   type: "checkbox",
   label: "21-50",
   name: "age",
   placeholder: "",
-  layout: "",
-  area: 4,
+  colSpan: 4,
+  required: false,
 };
 
-let box7 = {
+let field7 = {
   type: "checkbox",
   label: "50+",
   name: "age",
   placeholder: "",
-  layout: "",
-  area: 4,
+  colSpan: 4,
+  required: false,
 };
 
 formulator({
   formTitle: "Formulator Example",
-  formFields: [
+  formSections: [
     {
-      title: "Personal Details",
-      boxes: [box1, box2, emailBox],
+      sectionTitle: "Personal Details",
+      isVerticalLayout: true,
+      fields: [field1, field2, emailBox],
     },
     {
-      layout: "",
-      title: "City",
-      boxes: [cityBox],
+      sectionTitle: "City",
+      isVerticalLayout: false,
+      fields: [cityBox],
     },
     {
-      title: "Programming Level",
-      layout: "block",
-      boxes: [box3, box4],
+      sectionTitle: "Programming Level",
+      isVerticalLayout: false,
+      fields: [field3, field4],
     },
     {
-      title: "Age",
-      layout: "inline",
-      boxes: [box5, box6, box7],
+      sectionTitle: "Age",
+      isVerticalLayout: true,
+      fields: [field5, field6, field7],
     },
   ],
-  submitButtonText: "Submit",
+  submitButton: {
+    text: "Submit",
+    onSubmit: () => alert("submit"),
+  },
 });
