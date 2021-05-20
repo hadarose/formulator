@@ -188,7 +188,7 @@ let emailBox = {
   label: "email",
   name: "email",
   placeholder: "xxxx@xxxx.com",
-  colSpan: 8,
+  colSpan: 12,
   required: true,
 };
 
@@ -259,7 +259,7 @@ formulator({
   formSections: [
     {
       sectionTitle: "Personal Details",
-      isVerticalLayout: true,
+      isVerticalLayout: false,
       fields: [field1, field2, emailBox],
     },
     {
